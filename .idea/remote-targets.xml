@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteTargetsManager">
+    <targets>
+      <target name="WSL - Ubuntu-24.04" type="wsl" uuid="abd344ef-5beb-43d4-852d-7257bc3a27df">
+        <config>
+          <option name="distributionMsId" value="Ubuntu-24.04" />
+          <option name="projectRootOnTarget" value="{exitCode=0, timeout=false, cancelled=false, stdout=/tmp/tmp.dRbUzF4tvD&#13;&#10;, stderr=}/system-ui" />
+        </config>
+        <ContributedStateBase type="RsLanguageRuntime">
+          <config />
+        </ContributedStateBase>
+        <ContributedStateBase type="RsLanguageRuntime">
+          <config />
+        </ContributedStateBase>
+      </target>
+      <target name="mzdk@lwboy.site:22" type="ssh/sftp" uuid="83d5efdd-9bdc-45da-9171-c1f91022c6bb">
+        <config>
+          <option name="projectRootOnTarget" value="/home/mzdk/system-ui" />
+          <option name="serverName" value="mzdk@lwboy.site:22 password" />
+        </config>
+        <ContributedStateBase type="RsLanguageRuntime">
+          <config>
+            <option name="cargoPath" value="/snap/bin/cargo" />
+            <option name="cargoVersion" value="cmd_run.go:1276: WARNING: cannot create user data directory: cannot create snap home dir: mkdir /home/mzdk/snap: permission denied" />
+            <option name="rustcPath" value="/snap/bin/rustc" />
+            <option name="rustcVersion" value="cmd_run.go:1276: WARNING: cannot create user data directory: cannot create snap home dir: mkdir /home/mzdk/snap: permission denied" />
+          </config>
+        </ContributedStateBase>
+      </target>
+      <target name="admin@sscn-macos:22" type="ssh/sftp" uuid="3a11bc34-9878-45ef-a3a2-08b1bab828b1">
+        <config>
+          <option name="projectRootOnTarget" value="/Users/admin/system-ui" />
+          <option name="serverName" value="admin@sscn-macos:22 password" />
+        </config>
+        <ContributedStateBase type="RsLanguageRuntime">
+          <config>
+            <option name="cargoPath" value="/Users/admin/.cargo/bin/cargo" />
+            <option name="cargoVersion" value="1.86.0 (adf9b6ad1 2025-02-28)" />
+            <option name="rustcPath" value="/Users/admin/.cargo/bin/rustc" />
+            <option name="rustcVersion" value="1.86.0 (05f9846f8 2025-03-31)" />
+          </config>
+        </ContributedStateBase>
+      </target>
+    </targets>
+  </component>
+</project>

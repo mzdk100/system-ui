@@ -1,6 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
+        Control,
         raw::{
             uiControl, uiFreeText, uiGroup, uiGroupMargined, uiGroupSetChild, uiGroupSetMargined,
             uiGroupSetTitle, uiGroupTitle, uiNewGroup,
@@ -17,7 +17,13 @@ pub struct Group {
     _inner: *mut uiGroup,
 }
 
-impl BaseControl for Group {
+impl AsRef<Self> for Group {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Group {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -57,8 +63,8 @@ impl Group {
     /// * `child`: Control to be made child.
     pub fn set_child<C, I>(&self, child: C)
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
         unsafe { uiGroupSetChild(self._inner, child.as_ref().as_ptr_mut()) }
     }
@@ -87,7 +93,7 @@ impl Group {
     ///
     /// # returns
     /// * A new uiGroup instance.
-    pub fn new(title: &str) -> Result<Control<Self>, NulError> {
+    pub fn new(title: &str) -> Result<Self, NulError> {
         let title = CString::new(title)?;
         let ptr = unsafe { uiNewGroup(title.as_ptr()) };
         Ok(Self { _inner: ptr }.into())

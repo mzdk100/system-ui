@@ -13,21 +13,21 @@ macro_rules! modify_callback {
 
 #[macro_export]
 macro_rules! define_callback_function {
-    ($inner: ident,$outer:ident, $ret: ty, $raw_type: ty) => {
+    ($inner: ident,$outer:ident, $raw_ret_type: ty, $raw_self_type: ty $(, ($arg_name:ident, $arg_raw_type:ty, $arg_wrapped_type:ty))*) => {
         fn $inner<'a, 'b, F, T>(&'a self, f: Option<F>, data: &'a mut T) -> Result<(), UiError>
         where
             T: Copy + 'b,
-            F: FnMut(Control<Self>, &'b mut T) -> $ret + Send + 'static,
+            F: FnMut(Self $(, $arg_wrapped_type)*, &'b mut T) -> $raw_ret_type + Send + 'static,
             'b: 'a,
         {
             static STATE: Mutex<
-                Option<HashMap<isize, Box<dyn FnMut(*mut $raw_type, *mut c_void) -> $ret + Send>>>,
+                Option<HashMap<isize, Box<dyn FnMut(*mut $raw_self_type $(, *mut $arg_raw_type)*, *mut c_void) -> $raw_ret_type + Send>>>,
             > = Mutex::new(None);
 
-            unsafe extern "C" fn cb_(w: *mut $raw_type, data: *mut c_void) -> $ret {
+            unsafe extern "C" fn cb_(w: *mut $raw_self_type $(, $arg_name: *mut $arg_raw_type)*, data: *mut c_void) -> $raw_ret_type {
                 match modify_callback!(STATE, c, {
                     c.get_mut(&(w as *const _ as _))
-                        .and_then(|f| Some(f(w, data)))
+                        .and_then(|f| Some(f(w $(, $arg_name)*, data)))
                 }) {
                     Err(e) => {
                         error!("An error was occurred in {}: {}", stringify!($inner), e);
@@ -42,10 +42,9 @@ macro_rules! define_callback_function {
                     modify_callback!(STATE, c, {
                         c.insert(
                             self._inner as _,
-                            Box::new(move |w, d| {
-                                f(Self::from_ptr(w as _).into(), unsafe {
-                                    transmute(d as *mut T)
-                                })
+                            Box::new(move |w $(, $arg_name)*, d| {
+                                let self_ = Self::from_ptr(w as _);
+                                unsafe { f(self_ $(, <$arg_wrapped_type>::from_ptr($arg_name as _))*, transmute(d as *mut T)) }
                             }),
                         )
                     })?;

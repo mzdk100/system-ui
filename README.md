@@ -12,6 +12,12 @@ System UI是一个跨平台的原生小部件库，强调轻量级，他使用�
 cargo add system-ui
 ```
 
+## 依赖项
+- linux基于gtk：
+  ```shell
+  sudo apt install llvm clang libclang-dev libgtk-3-dev pkg-config
+  ```
+
 ## 许可证
 
 本项目采用Apache-2.0许可证。请查看项目中的LICENSE文件了解更多信息。

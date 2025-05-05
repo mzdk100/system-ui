@@ -1,0 +1,155 @@
+use {
+    crate::{
+        Control, define_callback_function,
+        error::UiError,
+        modify_callback,
+        raw::{
+            uiControl, uiFreeText, uiMultilineEntry, uiMultilineEntryAppend,
+            uiMultilineEntryOnChanged, uiMultilineEntryReadOnly, uiMultilineEntrySetReadOnly,
+            uiMultilineEntrySetText, uiMultilineEntryText, uiNewMultilineEntry,
+            uiNewNonWrappingMultilineEntry,
+        },
+    },
+    log::error,
+    std::{
+        collections::HashMap,
+        ffi::{CStr, CString, NulError, c_void},
+        mem::transmute,
+        str::Utf8Error,
+        sync::Mutex,
+    },
+};
+
+pub struct MultiLineEntry {
+    _inner: *mut uiMultilineEntry,
+}
+
+impl AsRef<Self> for MultiLineEntry {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for MultiLineEntry {
+    fn as_ptr_mut(&self) -> *mut uiControl {
+        self._inner as _
+    }
+
+    fn from_ptr(ptr: *mut uiControl) -> Self {
+        Self { _inner: ptr as _ }
+    }
+}
+
+impl MultiLineEntry {
+    /// Returns the multi line entry's text.
+    ///
+    /// # returns
+    /// * The text of the entry.
+    pub fn text(&self) -> Result<String, Utf8Error> {
+        let ptr = unsafe { uiMultilineEntryText(self._inner) };
+        let text = unsafe { CStr::from_ptr(ptr) }.to_str()?.into();
+        unsafe { uiFreeText(ptr) };
+        Ok(text)
+    }
+
+    /// Sets the multi line entry's text.
+    ///
+    /// # arguments
+    /// * `text`: Entry text.
+    pub fn set_text(&self, text: &str) -> Result<(), NulError> {
+        let text = CString::new(text)?;
+        Ok(unsafe { uiMultilineEntrySetText(self._inner, text.as_ptr()) })
+    }
+
+    /// Appends text to the multi line entry's text.
+    ///
+    /// # arguments
+    /// * `text`: Text to append.
+    pub fn append(&self, text: &str) -> Result<(), NulError> {
+        let text = CString::new(text)?;
+        Ok(unsafe { uiMultilineEntryAppend(self._inner, text.as_ptr()) })
+    }
+
+    define_callback_function!(_on_changed, uiMultilineEntryOnChanged, (), uiMultilineEntry);
+    /// Registers a callback for when the user changes the multi line entry's text.
+    ///
+    /// # arguments
+    /// * `f`: Callback function.
+    ///          @p sender Back reference to the instance that triggered the callback.
+    ///          @p senderData User data registered with the sender instance.
+    /// * `data`: User data to be passed to the callback.
+    ///
+    /// # note
+    /// * Only one callback can be registered at a time.
+    pub fn on_changed<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
+    where
+        T: Copy + 'b,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
+        'b: 'a,
+    {
+        self._on_changed(Some(f), data)
+    }
+
+    /// Unregisters a callback for when the user changes the multi line entry's text.
+    pub fn clear_changed(&self) -> Result<(), UiError> {
+        #[allow(unused_assignments)]
+        let mut func = Some(|_, _| ());
+        func = None;
+        self._on_changed(func, &mut ())
+    }
+
+    /// Returns whether the multi line entry's text is read only.
+    ///
+    /// # returns
+    /// * `true` if read only, `false` otherwise.
+    pub fn read_only(&self) -> bool {
+        unsafe { uiMultilineEntryReadOnly(self._inner) != 0 }
+    }
+
+    /// Sets whether the multi line entry's text is read only.
+    ///
+    /// # arguments
+    /// * `readonly`: `true` to make read only, `false` otherwise.
+    pub fn set_read_only(&self, readonly: bool) {
+        unsafe { uiMultilineEntrySetReadOnly(self._inner, readonly as _) }
+    }
+
+    /// Creates a new multi line entry that visually wraps text when lines overflow.
+    ///
+    /// # returns
+    /// * A new uiMultilineEntry instance.
+    pub fn new() -> Self {
+        let ptr = unsafe { uiNewMultilineEntry() };
+        Self { _inner: ptr }.into()
+    }
+
+    /// Creates a new multi line entry that scrolls horizontally when lines overflow.
+    ///
+    /// # returns
+    /// * A new uiMultilineEntry instance.
+    pub fn new_non_wrapping() -> Self {
+        let ptr = unsafe { uiNewNonWrappingMultilineEntry() };
+        Self { _inner: ptr }.into()
+    }
+}
+
+#[cfg(test)]
+pub(super) fn test_multi_line_entry() -> anyhow::Result<()> {
+    // 创建一个新的MultilineEntry实例
+    let entry = MultiLineEntry::new();
+
+    // 测试设置和获取文本
+    entry.set_text("测试")?;
+    assert_eq!("测试", entry.text()?);
+
+    // 测试追加文本
+    entry.append("追加")?;
+    assert_eq!("测试追加", entry.text()?);
+
+    // 测试只读属性
+    assert!(!entry.read_only());
+    entry.set_read_only(true);
+    assert!(entry.read_only());
+
+    Ok(())
+}

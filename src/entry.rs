@@ -1,7 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
@@ -24,7 +23,13 @@ pub struct Entry {
     _inner: *mut uiEntry,
 }
 
-impl BaseControl for Entry {
+impl AsRef<Self> for Entry {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Entry {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -69,7 +74,7 @@ impl Entry {
     pub fn on_changed<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_changed(Some(f), data)
@@ -103,7 +108,7 @@ impl Entry {
     ///
     /// # returns
     /// * A new uiEntry instance.
-    pub fn new() -> Control<Self> {
+    pub fn new() -> Self {
         let ptr = unsafe { uiNewEntry() };
         Self { _inner: ptr }.into()
     }
@@ -114,7 +119,7 @@ impl Entry {
     ///
     /// # returns
     /// * A new uiEntry instance.
-    pub fn new_password() -> Control<Self> {
+    pub fn new_password() -> Self {
         let ptr = unsafe { uiNewPasswordEntry() };
         Self { _inner: ptr }.into()
     }
@@ -126,7 +131,7 @@ impl Entry {
     ///
     /// # returns
     /// * A new uiEntry instance.
-    pub fn new_search() -> Control<Self> {
+    pub fn new_search() -> Self {
         let ptr = unsafe { uiNewSearchEntry() };
         Self { _inner: ptr }.into()
     }

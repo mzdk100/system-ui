@@ -1,7 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
@@ -22,7 +21,13 @@ pub struct Tab {
     _inner: *mut uiTab,
 }
 
-impl BaseControl for Tab {
+impl AsRef<Self> for Tab {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Tab {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -68,7 +73,7 @@ impl Tab {
     pub fn on_selected<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_selected(Some(f), data)
@@ -89,8 +94,8 @@ impl Tab {
     /// * `c`: Control to append.
     pub fn append<C, I>(&self, name: &str, c: C) -> Result<(), NulError>
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
         let name = CString::new(name)?;
         Ok(unsafe { uiTabAppend(self._inner, name.as_ptr(), c.as_ref().as_ptr_mut()) })
@@ -104,8 +109,8 @@ impl Tab {
     /// * `c`: Control to insert.
     pub fn insert_at<C, I>(&self, name: &str, index: i32, c: C) -> Result<(), NulError>
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
         let name = CString::new(name)?;
         Ok(unsafe { uiTabInsertAt(self._inner, name.as_ptr(), index, c.as_ref().as_ptr_mut()) })
@@ -156,7 +161,7 @@ impl Tab {
     ///
     /// # returns
     /// * A new uiTab instance.
-    pub fn new() -> Control<Self> {
+    pub fn new() -> Self {
         let ptr = unsafe { uiNewTab() };
         Self { _inner: ptr }.into()
     }

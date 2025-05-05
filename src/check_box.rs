@@ -1,7 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
@@ -23,7 +22,13 @@ pub struct CheckBox {
     _inner: *mut uiCheckbox,
 }
 
-impl BaseControl for CheckBox {
+impl AsRef<Self> for CheckBox {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for CheckBox {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -69,7 +74,7 @@ impl CheckBox {
     pub fn on_toggled<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_toggled(Some(f), data)
@@ -107,10 +112,10 @@ impl CheckBox {
     ///
     /// # returns
     /// A new uiCheckbox instance.
-    pub fn new(text: &str) -> Result<Control<Self>, NulError> {
+    pub fn new(text: &str) -> Result<Self, NulError> {
         let text = CString::new(text)?;
         let ptr = unsafe { uiNewCheckbox(text.as_ptr()) };
-        Ok(Self { _inner: ptr }.into())
+        Ok(Self { _inner: ptr })
     }
 }
 

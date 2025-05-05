@@ -1,5 +1,5 @@
 use crate::{
-    control::{BaseControl, Control},
+    Control,
     raw::{
         uiBox, uiBoxAppend, uiBoxDelete, uiBoxNumChildren, uiBoxPadded, uiBoxSetPadded, uiControl,
         uiNewHorizontalBox, uiNewVerticalBox,
@@ -10,7 +10,13 @@ pub struct Box {
     _inner: *mut uiBox,
 }
 
-impl BaseControl for Box {
+impl AsRef<Self> for Box {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Box {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -30,8 +36,8 @@ impl Box {
     /// * `stretchy`: `true` to stretch control, `FALSE` otherwise.
     pub fn append<C, I>(&self, child: C, stretchy: bool)
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
         let stretchy = if stretchy { 1 } else { 0 };
         unsafe { uiBoxAppend(self._inner, child.as_ref().as_ptr_mut(), stretchy) }
@@ -81,7 +87,7 @@ impl Box {
     ///
     /// # returns
     /// * A new uiBox instance.
-    pub fn new_horizontal() -> Control<Self> {
+    pub fn new_horizontal() -> Self {
         let ptr = unsafe { uiNewHorizontalBox() };
         Self { _inner: ptr }.into()
     }
@@ -91,7 +97,7 @@ impl Box {
     ///
     /// # returns
     /// * A new uiBox instance.
-    pub fn new_vertical() -> Control<Self> {
+    pub fn new_vertical() -> Self {
         let ptr = unsafe { uiNewVerticalBox() };
         Self { _inner: ptr }.into()
     }

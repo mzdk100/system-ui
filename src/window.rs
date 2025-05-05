@@ -1,16 +1,16 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
-            uiControl, uiFreeText, uiNewWindow, uiWindow, uiWindowBorderless, uiWindowContentSize,
-            uiWindowFocused, uiWindowFullscreen, uiWindowMargined, uiWindowOnClosing,
-            uiWindowOnContentSizeChanged, uiWindowOnFocusChanged, uiWindowOnPositionChanged,
-            uiWindowPosition, uiWindowResizeable, uiWindowSetBorderless, uiWindowSetChild,
-            uiWindowSetContentSize, uiWindowSetFullscreen, uiWindowSetMargined,
-            uiWindowSetPosition, uiWindowSetResizeable, uiWindowSetTitle, uiWindowTitle,
+            uiControl, uiFreeText, uiMsgBox, uiMsgBoxError, uiNewWindow, uiOpenFile, uiOpenFolder,
+            uiSaveFile, uiWindow, uiWindowBorderless, uiWindowContentSize, uiWindowFocused,
+            uiWindowFullscreen, uiWindowMargined, uiWindowOnClosing, uiWindowOnContentSizeChanged,
+            uiWindowOnFocusChanged, uiWindowOnPositionChanged, uiWindowPosition,
+            uiWindowResizeable, uiWindowSetBorderless, uiWindowSetChild, uiWindowSetContentSize,
+            uiWindowSetFullscreen, uiWindowSetMargined, uiWindowSetPosition, uiWindowSetResizeable,
+            uiWindowSetTitle, uiWindowTitle,
         },
     },
     log::error,
@@ -18,6 +18,7 @@ use {
         collections::HashMap,
         ffi::{CStr, CString, NulError, c_void},
         mem::transmute,
+        path::PathBuf,
         str::Utf8Error,
         sync::Mutex,
     },
@@ -28,7 +29,13 @@ pub struct Window {
     _inner: *mut uiWindow,
 }
 
-impl BaseControl for Window {
+impl AsRef<Self> for Window {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Window {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -81,7 +88,7 @@ impl Window {
     pub fn on_focus_changed<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_focus_changed(Some(f), data)
@@ -112,7 +119,7 @@ impl Window {
     pub fn on_closing<'a, 'b, F, T>(&self, mut f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) -> bool + Send + 'static,
+        F: FnMut(Self, &'b mut T) -> bool + Send + 'static,
         'b: 'a,
     {
         self._on_closing(Some(move |w, d| if f(w, d) { 1 } else { 0 }), data)
@@ -146,7 +153,7 @@ impl Window {
     pub fn on_content_size_changed<'a, 'b, F, T>(&self, f: F, data: &mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_content_size_changed(Some(f), data)
@@ -228,7 +235,7 @@ impl Window {
     pub fn on_position_changed<'a, 'b, F, T>(&self, f: F, data: &mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_position_changed(Some(f), data)
@@ -301,8 +308,8 @@ impl Window {
     /// * `child`: Control to be made child.
     pub fn set_child<C, I>(&self, child: C)
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
         unsafe { uiWindowSetChild(self._inner, child.as_ref().as_ptr_mut()) }
     }
@@ -353,16 +360,89 @@ impl Window {
     ///
     /// # returns
     /// * A new uiWindow instance.
-    pub fn new(
-        title: &str,
-        width: i32,
-        height: i32,
-        has_menubar: bool,
-    ) -> Result<Control<Self>, NulError> {
+    pub fn new(title: &str, width: i32, height: i32, has_menubar: bool) -> Result<Self, NulError> {
         let title = CString::new(title)?;
         let has_menubar = if has_menubar { 1 } else { 0 };
         let ptr = unsafe { uiNewWindow(title.as_ptr(), width, height, has_menubar) };
         Ok(Self { _inner: ptr }.into())
+    }
+
+    /// File chooser dialog window to select a single file.
+    ///
+    /// # returns
+    /// * File path, `NULL` on cancel.
+    pub fn open_file(&self) -> Result<Option<PathBuf>, Utf8Error> {
+        let ptr = unsafe { uiOpenFile(self._inner) };
+        if ptr.is_null() {
+            return Ok(None);
+        }
+
+        let path = PathBuf::from(unsafe { CStr::from_ptr(ptr).to_str()? });
+        unsafe {
+            uiFreeText(ptr);
+        }
+        Ok(Some(path))
+    }
+
+    /// Folder chooser dialog window to select a single folder.
+    ///
+    /// # returns
+    /// Folder path, `NULL` on cancel.
+    pub fn open_folder(&self) -> Result<Option<PathBuf>, Utf8Error> {
+        let ptr = unsafe { uiOpenFolder(self._inner) };
+        if ptr.is_null() {
+            return Ok(None);
+        }
+
+        let path = PathBuf::from(unsafe { CStr::from_ptr(ptr).to_str()? });
+        unsafe {
+            uiFreeText(ptr);
+        }
+        Ok(Some(path))
+    }
+
+    /// Save file dialog window.
+    /// The user is asked to confirm overwriting existing files, should the chosen
+    /// file path already exist on the system.
+    ///
+    /// # returns
+    /// * File path, `NULL` on cancel.
+    pub fn save_file(&self) -> Result<Option<PathBuf>, Utf8Error> {
+        let ptr = unsafe { uiSaveFile(self._inner) };
+        if ptr.is_null() {
+            return Ok(None);
+        }
+
+        let path = PathBuf::from(unsafe { CStr::from_ptr(ptr).to_str()? });
+        unsafe {
+            uiFreeText(ptr);
+        }
+        Ok(Some(path))
+    }
+
+    /// Message box dialog window.
+    /// A message box displayed in a new window indicating a common message.
+    ///
+    /// # arguments
+    /// * `title`: Dialog window title text.
+    /// * `description`: Dialog message text.
+    pub fn msg_box(&self, title: &str, description: &str) -> Result<(), NulError> {
+        let title = CString::new(title)?;
+        let description = CString::new(description)?;
+        Ok(unsafe { uiMsgBox(self._inner, title.as_ptr(), description.as_ptr()) })
+    }
+
+    /// Error message box dialog window.
+    /// A message box displayed in a new window indicating an error. On some systems
+    /// this may invoke an accompanying sound.
+    ///
+    /// # arguments
+    /// * `title`: Dialog window title text.
+    /// * `description`: Dialog message text.
+    pub fn msg_box_error(&self, title: &str, description: &str) -> Result<(), NulError> {
+        let title = CString::new(title)?;
+        let description = CString::new(description)?;
+        Ok(unsafe { uiMsgBoxError(self._inner, title.as_ptr(), description.as_ptr()) })
     }
 }
 

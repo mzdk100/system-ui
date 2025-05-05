@@ -11,7 +11,7 @@ void uiControlDestroy(uiControl *c) {
 
 uintptr_t uiControlHandle(uiControl *c) {
 	if(!c->Handle)
-		return NULL;
+		return 0;
 	return (*c->Handle)(c);
 }
 

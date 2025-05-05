@@ -1,19 +1,20 @@
 use {
-    crate::{error::UiError,
-        control::{BaseControl, Control},
-        define_callback_function,
+    crate::{
+        Control, define_callback_function,
+        error::UiError,
         modify_callback,
-        raw::{uiControl,
+        raw::{
             uiCombobox, uiComboboxAppend, uiComboboxClear, uiComboboxDelete, uiComboboxInsertAt,
             uiComboboxNumItems, uiComboboxOnSelected, uiComboboxSelected, uiComboboxSetSelected,
-            uiNewCombobox,
+            uiControl, uiNewCombobox,
         },
     },
     log::error,
     std::{
+        collections::HashMap,
         ffi::{CString, NulError, c_void},
         mem::transmute,
-        sync::Mutex,collections::HashMap
+        sync::Mutex,
     },
 };
 
@@ -22,7 +23,13 @@ pub struct ComboBox {
     _inner: *mut uiCombobox,
 }
 
-impl BaseControl for ComboBox {
+impl AsRef<Self> for ComboBox {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for ComboBox {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -104,7 +111,7 @@ impl ComboBox {
     pub fn on_selected<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_selected(Some(f), data)
@@ -122,9 +129,9 @@ impl ComboBox {
     ///
     /// # returns
     /// * A new uiCombobox instance.
-    pub fn new() -> Control<Self> {
+    pub fn new() -> Self {
         let ptr = unsafe { uiNewCombobox() };
-        Self {_inner:ptr}.into()
+        Self { _inner: ptr }
     }
 }
 

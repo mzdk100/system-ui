@@ -1,5 +1,5 @@
 use crate::{
-    control::{BaseControl, Control},
+    Control,
     raw::{uiControl, uiNewHorizontalSeparator, uiNewVerticalSeparator, uiSeparator},
 };
 
@@ -7,7 +7,13 @@ pub struct Separator {
     _inner: *mut uiSeparator,
 }
 
-impl BaseControl for Separator {
+impl AsRef<Self> for Separator {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Separator {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -23,7 +29,7 @@ impl Separator {
     ///
     /// # returns
     /// * A new uiSeparator instance.
-    pub fn new_horizontal() -> Control<Self> {
+    pub fn new_horizontal() -> Self {
         let ptr = unsafe { uiNewHorizontalSeparator() };
         Self { _inner: ptr }.into()
     }
@@ -33,7 +39,7 @@ impl Separator {
     ///
     /// # returns
     /// * A new uiSeparator instance.
-    pub fn new_vertical() -> Control<Self> {
+    pub fn new_vertical() -> Self {
         let ptr = unsafe { uiNewVerticalSeparator() };
         Self { _inner: ptr }.into()
     }

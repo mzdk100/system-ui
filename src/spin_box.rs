@@ -1,7 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
@@ -17,7 +16,13 @@ pub struct Spinbox {
     _inner: *mut uiSpinbox,
 }
 
-impl BaseControl for Spinbox {
+impl AsRef<Self> for Spinbox {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Spinbox {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -61,7 +66,7 @@ impl Spinbox {
     pub fn on_changed<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_changed(Some(f), data)
@@ -88,7 +93,7 @@ impl Spinbox {
     ///
     /// # returns
     /// A new uiSpinbox instance.
-    pub fn new(min: i32, max: i32) -> Control<Self> {
+    pub fn new(min: i32, max: i32) -> Self {
         let ptr = unsafe { uiNewSpinbox(min, max) };
         Self { _inner: ptr }.into()
     }

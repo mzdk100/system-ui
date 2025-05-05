@@ -1,11 +1,11 @@
 use {
-    crate::{error::UiError,
-        control::{BaseControl, Control},
-        define_callback_function,
+    crate::{
+        Control, define_callback_function,
+        error::UiError,
         modify_callback,
         raw::{
             uiControl, uiNewSlider, uiSlider, uiSliderHasToolTip, uiSliderOnChanged,
-            uiSliderOnReleased, uiSliderSetValue, uiSliderSetHasToolTip, uiSliderSetRange,
+            uiSliderOnReleased, uiSliderSetHasToolTip, uiSliderSetRange, uiSliderSetValue,
             uiSliderValue,
         },
     },
@@ -17,7 +17,13 @@ pub struct Slider {
     _inner: *mut uiSlider,
 }
 
-impl BaseControl for Slider {
+impl AsRef<Self> for Slider {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Slider {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -40,7 +46,7 @@ impl Slider {
     ///
     /// # arguments
     /// * `value`: Value to set.
-    /// 
+    ///
     /// # note
     /// * Setting a value out of range will clamp to the nearest value in range.
     pub fn set_value(&self, value: i32) {
@@ -78,7 +84,7 @@ impl Slider {
     pub fn on_changed<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_changed(Some(f), data)
@@ -106,7 +112,7 @@ impl Slider {
     pub fn on_released<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_released(Some(f), data)
@@ -146,7 +152,7 @@ impl Slider {
     ///
     /// # returns
     /// A new uiSlider instance.
-    pub fn new(min: i32, max: i32) -> Control<Self> {
+    pub fn new(min: i32, max: i32) -> Self {
         let ptr = unsafe { uiNewSlider(min, max) };
         Self { _inner: ptr }.into()
     }

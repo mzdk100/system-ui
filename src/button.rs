@@ -1,7 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
-        define_callback_function,
+        Control, define_callback_function,
         error::UiError,
         modify_callback,
         raw::{
@@ -23,7 +22,13 @@ pub struct Button {
     _inner: *mut uiButton,
 }
 
-impl BaseControl for Button {
+impl AsRef<Self> for Button {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Button {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -68,7 +73,7 @@ impl Button {
     pub fn on_clicked<'a, 'b, F, T>(&self, f: F, data: &'a mut T) -> Result<(), UiError>
     where
         T: Copy + 'b,
-        F: FnMut(Control<Self>, &'b mut T) + Send + 'static,
+        F: FnMut(Self, &'b mut T) + Send + 'static,
         'b: 'a,
     {
         self._on_clicked(Some(f), data)
@@ -89,10 +94,10 @@ impl Button {
     ///
     /// # returns
     /// * A new uiButton instance.
-    pub fn new(text: &str) -> Result<Control<Self>, NulError> {
+    pub fn new(text: &str) -> Result<Self, NulError> {
         let text = CString::new(text)?;
         let ptr = unsafe { uiNewButton(text.as_ptr()) };
-        Ok(Self { _inner: ptr }.into())
+        Ok(Self { _inner: ptr })
     }
 }
 

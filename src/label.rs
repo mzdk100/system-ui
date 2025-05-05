@@ -1,6 +1,6 @@
 use {
     crate::{
-        control::{BaseControl, Control},
+        Control,
         raw::{uiControl, uiFreeText, uiLabel, uiLabelSetText, uiLabelText, uiNewLabel},
     },
     std::{
@@ -13,7 +13,13 @@ pub struct Label {
     _inner: *mut uiLabel,
 }
 
-impl BaseControl for Label {
+impl AsRef<Self> for Label {
+    fn as_ref(&self) -> &Self {
+        self
+    }
+}
+
+impl Control for Label {
     fn as_ptr_mut(&self) -> *mut uiControl {
         self._inner as _
     }
@@ -51,7 +57,7 @@ impl Label {
     ///
     /// # returns
     /// * A new uiLabel instance.
-    pub fn new(text: &str) -> Result<Control<Self>, NulError> {
+    pub fn new(text: &str) -> Result<Self, NulError> {
         let text = CString::new(text)?;
         let ptr = unsafe { uiNewLabel(text.as_ptr()) };
         Ok(Self { _inner: ptr }.into())

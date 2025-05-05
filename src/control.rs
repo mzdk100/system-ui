@@ -7,35 +7,25 @@ use {
     },
     std::{
         ffi::{CString, NulError},
-        ops::Deref,
         ptr::null_mut,
     },
 };
 
-pub trait BaseControl {
+pub trait Control: AsRef<Self> {
     fn as_ptr(&self) -> *const uiControl {
         self.as_ptr_mut() as _
     }
 
     fn as_ptr_mut(&self) -> *mut uiControl;
+
     fn from_ptr(ptr: *mut uiControl) -> Self;
-}
 
-#[derive(Debug)]
-pub struct Control<T> {
-    _inner: T,
-}
-
-impl<T> Control<T> {
     /// Frees the memory associated with the control reference.
     ///
     /// # note
     /// This method is public only for writing custom controls.
-    pub fn free(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiFreeControl(self._inner.as_ptr_mut()) }
+    fn free(&self) {
+        unsafe { uiFreeControl(self.as_ptr_mut()) }
     }
 
     /// Makes sure the control's parent can be set to `parent`.
@@ -48,13 +38,12 @@ impl<T> Control<T> {
     ///
     /// # warning
     /// This will crash the application if `FALSE`.
-    pub fn verify_set_parent<C, I>(&self, parent: C)
+    fn verify_set_parent<C, I>(&self, parent: C)
     where
-        C: AsRef<Control<I>>,
-        I: BaseControl,
-        T: BaseControl,
+        C: AsRef<I>,
+        I: Control,
     {
-        unsafe { uiControlVerifySetParent(self._inner.as_ptr_mut(), parent.as_ref().as_ptr_mut()) }
+        unsafe { uiControlVerifySetParent(self.as_ptr_mut(), parent.as_ref().as_ptr_mut()) }
     }
 
     /// Returns whether or not the control can be interacted with by the user.
@@ -66,11 +55,8 @@ impl<T> Control<T> {
     ///
     /// # see
     /// - `uiControlEnabled`
-    pub fn enabled_to_user(&self) -> bool
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlEnabledToUser(self._inner.as_ptr_mut()) != 0 }
+    fn enabled_to_user(&self) -> bool {
+        unsafe { uiControlEnabledToUser(self.as_ptr_mut()) != 0 }
     }
 
     /// Dispose and free all allocated resources.
@@ -81,40 +67,31 @@ impl<T> Control<T> {
     ///
     /// # todo
     /// Document ownership.
-    pub fn destroy(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlDestroy(self._inner.as_ptr_mut()) }
+    fn destroy(&self) {
+        unsafe { uiControlDestroy(self.as_ptr_mut()) }
     }
 
     /// Returns the control's OS-level handle.
     ///
     /// # returns
     /// * OS-level handle.
-    pub fn handle(&self) -> usize
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlHandle(self._inner.as_ptr_mut()) }
+    fn handle(&self) -> usize {
+        unsafe { uiControlHandle(self.as_ptr_mut()) }
     }
 
     /// Returns the parent control.
     ///
     /// # returns
     /// * The parent control, `NULL` if detached.
-    pub fn parent<O>(&self) -> Option<Control<O>>
+    fn parent<O>(&self) -> Option<O>
     where
-        O: BaseControl,
-        T: BaseControl,
+        O: Control,
     {
-        let ptr = unsafe { uiControlParent(self._inner.as_ptr_mut()) };
+        let ptr = unsafe { uiControlParent(self.as_ptr_mut()) };
         if ptr.is_null() {
             None
         } else {
-            Some(Control {
-                _inner: O::from_ptr(ptr),
-            })
+            Some(O::from_ptr(ptr))
         }
     }
 
@@ -125,59 +102,46 @@ impl<T> Control<T> {
     ///
     /// # todo
     /// Document ownership.
-    pub fn set_parent<P, I>(&self, parent: Option<P>)
+    fn set_parent<P, I>(&self, parent: Option<P>)
     where
-        P: AsRef<Control<I>>,
-        I: BaseControl,
-        T: BaseControl,
+        P: AsRef<I>,
+        I: Control,
     {
         let parent = match parent {
             None => null_mut(),
             Some(p) => p.as_ref().as_ptr_mut(),
         };
 
-        unsafe { uiControlSetParent(self._inner.as_ptr_mut(), parent) }
+        unsafe { uiControlSetParent(self.as_ptr_mut(), parent) }
     }
 
     /// Returns whether or not the control is a top level control.
     ///
     /// # returns
     /// * `true` if top level control, `FALSE` otherwise.
-    pub fn toplevel(&self) -> bool
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlToplevel(self._inner.as_ptr_mut()) != 0 }
+    fn toplevel(&self) -> bool {
+        unsafe { uiControlToplevel(self.as_ptr_mut()) != 0 }
     }
 
     /// Returns whether or not the control is visible.
     ///
     /// # returns
     /// * `true` if visible, `FALSE` otherwise.
-    pub fn visible(&self) -> bool
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlVisible(self._inner.as_ptr_mut()) != 0 }
+    fn visible(&self) -> bool {
+        unsafe { uiControlVisible(self.as_ptr_mut()) != 0 }
     }
 
     /// Shows the control.
-    pub fn show(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlShow(self._inner.as_ptr_mut()) }
+    fn show(&self) {
+        unsafe { uiControlShow(self.as_ptr_mut()) }
     }
 
     /// Hides the control.
     ///
     /// # note
     /// * Hidden controls do not take up space within the layout.
-    pub fn hide(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlHide(self._inner.as_ptr_mut()) }
+    fn hide(&self) {
+        unsafe { uiControlHide(self.as_ptr_mut()) }
     }
 
     /// Returns whether or not the control is enabled.
@@ -185,27 +149,18 @@ impl<T> Control<T> {
     ///
     /// # see
     /// - `uiControlEnabledToUser`
-    pub fn enabled(&self) -> bool
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlEnabled(self._inner.as_ptr_mut()) != 0 }
+    fn enabled(&self) -> bool {
+        unsafe { uiControlEnabled(self.as_ptr_mut()) != 0 }
     }
 
     /// Enables the control.
-    pub fn enable(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlEnable(self._inner.as_ptr_mut()) }
+    fn enable(&self) {
+        unsafe { uiControlEnable(self.as_ptr_mut()) }
     }
 
     /// Disables the control.
-    pub fn disable(&self)
-    where
-        T: BaseControl,
-    {
-        unsafe { uiControlDisable(self._inner.as_ptr_mut()) }
+    fn disable(&self) {
+        unsafe { uiControlDisable(self.as_ptr_mut()) }
     }
 
     /// Allocates a uiControl.
@@ -213,9 +168,9 @@ impl<T> Control<T> {
     ///
     /// # todo
     /// Document parameters
-    pub fn alloc(os_sig: u32, type_sig: u32, type_name_str: &str) -> Result<Self, NulError>
+    fn alloc(os_sig: u32, type_sig: u32, type_name_str: &str) -> Result<Self, NulError>
     where
-        T: BaseControl,
+        Self: Sized,
     {
         let type_name_str = CString::new(type_name_str)?;
         let ptr = unsafe {
@@ -226,29 +181,7 @@ impl<T> Control<T> {
                 type_name_str.as_ptr(),
             )
         };
-        Ok(Self {
-            _inner: T::from_ptr(ptr),
-        })
-    }
-}
-
-impl<T> From<T> for Control<T> {
-    fn from(value: T) -> Self {
-        Self { _inner: value }
-    }
-}
-
-impl<T> Deref for Control<T> {
-    type Target = T;
-
-    fn deref(&self) -> &Self::Target {
-        &self._inner
-    }
-}
-
-impl<T> AsRef<Self> for Control<T> {
-    fn as_ref(&self) -> &Self {
-        self
+        Ok(Self::from_ptr(ptr))
     }
 }
 
@@ -258,7 +191,13 @@ pub(super) fn test_control() -> anyhow::Result<()> {
         _inner: *mut uiControl,
     }
 
-    impl BaseControl for MyControl {
+    impl AsRef<Self> for MyControl {
+        fn as_ref(&self) -> &Self {
+            self
+        }
+    }
+
+    impl Control for MyControl {
         fn as_ptr_mut(&self) -> *mut uiControl {
             self._inner
         }
@@ -268,7 +207,7 @@ pub(super) fn test_control() -> anyhow::Result<()> {
         }
     }
 
-    let control = Control::<MyControl>::alloc(0, 0, "MyControl")?;
+    let control = MyControl::alloc(0, 0, "MyControl")?;
     control.show();
     control.hide();
     assert!(!control.enabled());
@@ -276,7 +215,7 @@ pub(super) fn test_control() -> anyhow::Result<()> {
     control.disable();
     assert!(!control.visible());
     assert!(!control.toplevel());
-    control.set_parent::<Control<MyControl>, _>(None);
+    control.set_parent::<MyControl, _>(None);
     assert!(control.parent::<MyControl>().is_none());
     assert!(control.handle() == 0);
     assert!(!control.enabled_to_user());
