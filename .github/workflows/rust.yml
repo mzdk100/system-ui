@@ -19,6 +19,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Ubuntu 专属依赖安装
+      - name: Setup Ubuntu dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev
+
       # 构建项目
       - name: Build
         run: cargo build -vv
