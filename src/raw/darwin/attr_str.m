@@ -1,6 +1,6 @@
 // 12 february 2017
 #import "uipriv_darwin.h"
-#import "attrstr.h"
+#import "attr_str.h"
 
 // this is what AppKit does internally
 // WebKit does this too; see https://github.com/adobe/webkit/blob/master/Source/WebCore/platform/graphics/mac/GraphicsContextMac.mm
