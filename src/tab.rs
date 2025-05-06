@@ -146,7 +146,7 @@ impl Tab {
         unsafe { uiTabMargined(self._inner, index) != 0 }
     }
 
-    /// Sets whether or not the page/tab at `index` has a margin.
+    /// Sets whether the page/tab at `index` has a margin.
     ///
     /// The margin size is determined by the OS defaults.
     ///
@@ -165,15 +165,4 @@ impl Tab {
         let ptr = unsafe { uiNewTab() };
         Self { _inner: ptr }.into()
     }
-}
-
-#[cfg(test)]
-pub(super) fn test_tab() -> anyhow::Result<()> {
-    let tab = Tab::new();
-    assert_eq!(-1, tab.selected());
-    tab.set_selected(0);
-    // assert_eq!(0, tab.selected());
-    assert_eq!(0, tab.num_pages());
-
-    Ok(())
 }

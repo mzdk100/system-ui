@@ -61,36 +61,3 @@ pub fn main_loop() {
 pub fn quit_loop() {
     unsafe { uiQuit() }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_all() -> anyhow::Result<()> {
-        init()?;
-
-        // ui操作必须单线程，所以这里收集所有要测试的函数顺序运行
-        test_box()?;
-        test_button()?;
-        test_check_box()?;
-        test_combo_box()?;
-        test_control()?;
-        test_date_time_picker()?;
-        test_editable_combo_box()?;
-        test_entry()?;
-        test_group()?;
-        test_label()?;
-        test_menu()?;
-        test_multi_line_entry()?;
-        test_progress_bar()?;
-        test_radio_buttons()?;
-        test_separator()?;
-        test_slider()?;
-        test_spin_box()?;
-        test_tab()?;
-        test_window()?;
-
-        Ok(())
-    }
-}

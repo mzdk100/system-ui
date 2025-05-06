@@ -17,6 +17,10 @@ pkg-config.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 
+[[test]]
+name = "test_all"
+path = "tests/test_all/mod.rs"
+
 [workspace.package]
 edition = "2024"
 version = "0.1.0"

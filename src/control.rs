@@ -46,7 +46,7 @@ pub trait Control: AsRef<Self> {
         unsafe { uiControlVerifySetParent(self.as_ptr_mut(), parent.as_ref().as_ptr_mut()) }
     }
 
-    /// Returns whether or not the control can be interacted with by the user.
+    /// Returns whether the control can be interacted with by the user.
     /// Checks if the control and all it's parents are enabled to make sure it can
     /// be interacted with by the user.
     ///
@@ -115,7 +115,7 @@ pub trait Control: AsRef<Self> {
         unsafe { uiControlSetParent(self.as_ptr_mut(), parent) }
     }
 
-    /// Returns whether or not the control is a top level control.
+    /// Returns whether the control is a top level control.
     ///
     /// # returns
     /// * `true` if top level control, `FALSE` otherwise.
@@ -123,7 +123,7 @@ pub trait Control: AsRef<Self> {
         unsafe { uiControlToplevel(self.as_ptr_mut()) != 0 }
     }
 
-    /// Returns whether or not the control is visible.
+    /// Returns whether the control is visible.
     ///
     /// # returns
     /// * `true` if visible, `FALSE` otherwise.
@@ -144,7 +144,7 @@ pub trait Control: AsRef<Self> {
         unsafe { uiControlHide(self.as_ptr_mut()) }
     }
 
-    /// Returns whether or not the control is enabled.
+    /// Returns whether the control is enabled.
     /// Defaults to `true`.
     ///
     /// # see
@@ -183,45 +183,4 @@ pub trait Control: AsRef<Self> {
         };
         Ok(Self::from_ptr(ptr))
     }
-}
-
-#[cfg(test)]
-pub(super) fn test_control() -> anyhow::Result<()> {
-    struct MyControl {
-        _inner: *mut uiControl,
-    }
-
-    impl AsRef<Self> for MyControl {
-        fn as_ref(&self) -> &Self {
-            self
-        }
-    }
-
-    impl Control for MyControl {
-        fn as_ptr_mut(&self) -> *mut uiControl {
-            self._inner
-        }
-
-        fn from_ptr(ptr: *mut uiControl) -> Self {
-            Self { _inner: ptr }
-        }
-    }
-
-    let control = MyControl::alloc(0, 0, "MyControl")?;
-    control.show();
-    control.hide();
-    assert!(!control.enabled());
-    control.enable();
-    control.disable();
-    assert!(!control.visible());
-    assert!(!control.toplevel());
-    control.set_parent::<MyControl, _>(None);
-    assert!(control.parent::<MyControl>().is_none());
-    assert!(control.handle() == 0);
-    assert!(!control.enabled_to_user());
-    control.destroy();
-    control.verify_set_parent(&control);
-    control.free();
-
-    Ok(())
 }

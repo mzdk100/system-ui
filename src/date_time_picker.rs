@@ -1,7 +1,8 @@
-use crate::error::UiError;
 use {
     crate::{
-        Control, define_callback_function, modify_callback,
+        Control, define_callback_function,
+        error::UiError,
+        modify_callback,
         raw::{
             tm, uiControl, uiDateTimePicker, uiDateTimePickerOnChanged, uiDateTimePickerSetTime,
             uiDateTimePickerTime, uiNewDatePicker, uiNewDateTimePicker, uiNewTimePicker,
@@ -122,18 +123,4 @@ impl DateTimePicker {
         let ptr = unsafe { uiNewDateTimePicker() };
         Self { _inner: ptr }.into()
     }
-}
-
-#[cfg(test)]
-pub(super) fn test_date_time_picker() -> anyhow::Result<()> {
-    use chrono::{DateTime, Local};
-    let picker = DateTimePicker::new_date();
-    let _time: DateTime<Local> = picker.time().into();
-    // println!("{:?}", _time);
-    let picker = DateTimePicker::new();
-    let time = SystemTime::UNIX_EPOCH + Duration::from_secs(10000);
-    picker.set_time(time)?;
-    assert_eq!(time, picker.time());
-
-    Ok(())
 }
