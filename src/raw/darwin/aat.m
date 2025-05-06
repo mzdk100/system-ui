@@ -1,7 +1,7 @@
 // 14 february 2017
 #import "uipriv_darwin.h"
 #import "aat.h"
-#import "attrstr.h"
+#import "attr_str.h"
 
 // TODO explain the purpose of this file
 
