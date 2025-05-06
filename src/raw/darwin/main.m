@@ -1,6 +1,6 @@
 // 6 april 2015
 #import "uipriv_darwin.h"
-#import "attrstr.h"
+#import "attr_str.h"
 
 static BOOL canQuit = NO;
 static NSAutoreleasePool *globalPool;
