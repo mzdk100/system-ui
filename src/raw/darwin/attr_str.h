@@ -1,5 +1,5 @@
 // 4 march 2018
-#import "../common/attrstr.h"
+#import "../common/attr_str.h"
 #import "aat.h"
 
 // opentype.m
