@@ -1,6 +1,6 @@
 // 2 november 2017
 #import "uipriv_darwin.h"
-#import "attrstr.h"
+#import "attr_str.h"
 
 // This is the part of the font style matching and normalization code
 // that handles fonts that use the fvar table.
