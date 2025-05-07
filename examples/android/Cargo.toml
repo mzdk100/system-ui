@@ -1,0 +1,21 @@
+[package]
+name = "system-ui-android-example"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata.android.sdk]
+min_sdk_version = 26
+target_sdk_version = 35
+max_sdk_version = 35
+
+[lib]
+crate-type = ["cdylib"]
+path = "hello.rs"
+
+[dependencies.system-ui]
+path = "../.."
+
+[dependencies]
+mobile-entry-point = "0.1.1"
+ndk-glue = "0.7.0"
+anyhow.workspace = true

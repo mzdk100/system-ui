@@ -36,5 +36,5 @@ log = "0.4.27"
 pkg-config = "0.3.32"
 
 [workspace]
-members = []
+members = ["examples/android"]
 resolver = "3"

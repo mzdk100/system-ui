@@ -24,6 +24,14 @@ const LIB_WINDOWS: [&str; 14] = [
     "windowscodecs",
 ];
 
+const SRC_ANDROID: [&str; 6] = [
+    "callback.c",
+    "control.c",
+    "lib.c",
+    "main.c",
+    "thread.c",
+    "view.c",
+];
 const SRC_COMMON: [&str; 13] = [
     "attribute.c",
     "attr_list.c",
@@ -205,21 +213,17 @@ fn main() -> anyhow::Result<()> {
     // Determine build platform
     let target_os = var("CARGO_CFG_TARGET_OS")?;
     let target_triple = var("TARGET")?;
-    let apple = target_triple.contains("apple");
-    let unix = cfg!(target_family = "unix") && !apple;
     let out_dir = var("OUT_DIR")?;
+    let out_dir = Path::new(&out_dir);
     let mut src_base = Path::new("src").join("raw");
 
-    // Generate system-ui bindings on the fly
-    let bindings = bindgen::Builder::default()
+    bindgen::Builder::default()
         .header(src_base.join("ui.h").to_string_lossy())
         .opaque_type("max_align_t") // For some reason this ends up too large
         .clang_args(["-target", &target_triple])
         .trust_clang_mangling(false) // clang sometimes wants to treat these functions as C++
-        .generate()?;
-
-    let out_path = Path::new(&out_dir);
-    bindings.write_to_file(out_path.join("bindings.rs"))?;
+        .generate()?
+        .write_to_file(&out_dir.join("bindings.rs"))?;
 
     let mut base_config = Build::new();
 
@@ -235,12 +239,14 @@ fn main() -> anyhow::Result<()> {
         println!("cargo:rerun-if-changed={}", path.display());
     }
 
-    if target_os == "windows" {
+    if target_os == "android" {
+        config_android(&mut base_config, &mut src_base)?;
+    } else if target_os == "windows" {
         config_windows(&mut base_config, &mut src_base)?;
-    } else if unix {
+    } else if target_os == "macos" {
+        config_macos(&mut base_config, &mut src_base)?;
+    } else if target_os == "linux" {
         config_unix(&mut base_config, &mut src_base)?;
-    } else if apple {
-        config_apple(&mut base_config, &mut src_base)?;
     } else {
         panic!("unrecognized platform! cannot build system-ui from source");
     }
@@ -250,7 +256,7 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-fn config_apple(base_config: &mut Build, src_path: &mut PathBuf) -> anyhow::Result<()> {
+fn config_macos(base_config: &mut Build, src_path: &mut PathBuf) -> anyhow::Result<()> {
     base_config.include(src_path.join("darwin"));
 
     // https://github.com/sbmpost/AutoRaise/issues/69
@@ -311,6 +317,18 @@ fn config_unix(base_config: &mut Build, src_path: &mut PathBuf) -> anyhow::Resul
 
     for filename in SRC_UNIX.iter() {
         let path = src_path.join("unix").join(filename);
+        base_config.file(&path);
+        println!("cargo:rerun-if-changed={}", path.display());
+    }
+
+    Ok(())
+}
+
+fn config_android(base_config: &mut Build, src_path: &mut PathBuf) -> anyhow::Result<()> {
+    base_config.include(src_path.join("android"));
+
+    for filename in SRC_ANDROID.iter() {
+        let path = src_path.join("android").join(filename);
         base_config.file(&path);
         println!("cargo:rerun-if-changed={}", path.display());
     }

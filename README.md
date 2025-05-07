@@ -8,6 +8,16 @@ System UI是一个跨平台的原生小部件库，强调轻量级，他使用�
 支持的平台包括Windows,MacOS,Linux,iOS,Android等。
 
 ## 使用
+- 桌面平台(Windows, macOS, Linux)：
+  ```shell
+  cargo run --example hello
+  ```
+- 安卓平台：
+  ```shell
+  cargo apk2 run -p system-ui-android-example
+  ```
+
+## 项目集成
 ```shell
 cargo add system-ui
 ```
@@ -16,6 +26,10 @@ cargo add system-ui
 - linux基于gtk：
   ```shell
   sudo apt install llvm clang libclang-dev libgtk-3-dev pkg-config
+  ```
+- android打包工具
+  ```shell
+  cargo install cargo-apk2
   ```
 
 ## 许可证
